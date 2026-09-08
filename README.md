@@ -5,7 +5,6 @@ A distributed log analytics and alerting platform built with Java, gRPC, Apache 
 ## Project Overview
 
 LogStream is designed to ingest, index, search, analyze, and monitor large volumes of application logs.
-
 ## Technology Stack
 
 - Java
