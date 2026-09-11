@@ -7,12 +7,20 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- ========================================= -->
+    <!-- Spring Boot Parent                       -->
+    <!-- ========================================= -->
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>4.1.1</version>
         <relativePath/>
     </parent>
+
+    <!-- ========================================= -->
+    <!-- Project Information                      -->
+    <!-- ========================================= -->
 
     <groupId>com.logstream</groupId>
     <artifactId>logstream-backend</artifactId>
@@ -21,34 +29,57 @@
     <name>logstream-backend</name>
     <description>Distributed Log Analytics Backend</description>
 
+    <!-- ========================================= -->
+    <!-- Properties                               -->
+    <!-- ========================================= -->
+
     <properties>
+
+        <!-- Java -->
         <java.version>24</java.version>
 
-        <grpc.version>1.75.0</grpc.version>
-        <protobuf.version>4.32.0</protobuf.version>
+        <!-- Spring Boot Main Class -->
+        <start-class>
+            com.logstream.backend.LogstreamBackendApplication
+        </start-class>
+
+        <!-- gRPC -->
+        <grpc.version>1.83.1</grpc.version>
+
+        <!-- Protocol Buffers -->
+        <protobuf.version>4.30.2</protobuf.version>
+
     </properties>
+
+    <!-- ========================================= -->
+    <!-- Dependencies                             -->
+    <!-- ========================================= -->
 
     <dependencies>
 
-        <!-- =============================== -->
-        <!-- Spring Boot                     -->
-        <!-- =============================== -->
+        <!-- ========================================= -->
+        <!-- Spring Boot                             -->
+        <!-- ========================================= -->
 
+        <!-- Spring MVC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
+        <!-- WebSocket -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- DevTools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -56,27 +87,34 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- =============================== -->
-        <!-- gRPC                             -->
-        <!-- =============================== -->
+        <!-- ========================================= -->
+        <!-- gRPC                                     -->
+        <!-- ========================================= -->
 
+        <!-- gRPC Netty Transport -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
             <version>${grpc.version}</version>
         </dependency>
 
+        <!-- gRPC Protocol Buffers -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
             <version>${grpc.version}</version>
         </dependency>
 
+        <!-- gRPC Stub -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
             <version>${grpc.version}</version>
         </dependency>
+
+        <!-- ========================================= -->
+        <!-- Protocol Buffers                         -->
+        <!-- ========================================= -->
 
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -84,9 +122,9 @@
             <version>${protobuf.version}</version>
         </dependency>
 
-        <!-- =============================== -->
-        <!-- Testing                          -->
-        <!-- =============================== -->
+        <!-- ========================================= -->
+        <!-- Testing                                  -->
+        <!-- ========================================= -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -96,16 +134,64 @@
 
     </dependencies>
 
+    <!-- ========================================= -->
+    <!-- Build Configuration                      -->
+    <!-- ========================================= -->
+
     <build>
+
         <plugins>
 
-            <!-- Spring Boot -->
+            <!-- ========================================= -->
+            <!-- Protobuf + gRPC Code Generation          -->
+            <!-- ========================================= -->
+
+            <plugin>
+                <groupId>io.github.ascopes</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>5.1.7</version>
+
+                <configuration>
+
+    <sourceDirectories>
+        <sourceDirectory>
+            ${project.basedir}/proto
+        </sourceDirectory>
+    </sourceDirectories>
+
+    <protoc kind="binary-maven">
+        <version>${protobuf.version}</version>
+    </protoc>
+
+    <embedSources>false</embedSources>
+
+</configuration>
+
+                <executions>
+
+                    <execution>
+                        <id>generate-protobuf</id>
+
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+
+                </executions>
+
+            </plugin>
+
+            <!-- ========================================= -->
+            <!-- Spring Boot                               -->
+            <!-- ========================================= -->
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
         </plugins>
+
     </build>
 
 </project>

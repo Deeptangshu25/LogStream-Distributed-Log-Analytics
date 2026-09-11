@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package logstream;
+
+option java_multiple_files = true;
+option java_package = "com.logstream.proto";
+option java_outer_classname = "LogProto";
+
+// Log ingestion service
+service LogIngestionService {
+
+    // Send a single log entry
+    rpc SendLog(LogMessage) returns (LogResponse);
+
+    // Send multiple logs in one request
+    rpc SendLogs(LogBatch) returns (LogResponse);
+}
+
+// A single log entry
+message LogMessage {
+
+    // Unique identifier for the log
+    string id = 1;
+
+    // Timestamp in ISO-8601 format
+    string timestamp = 2;
+
+    // Log severity level
+    LogLevel level = 3;
+
+    // Name of the service that generated the log
+    string service = 4;
+
+    // Name of the host/server
+    string host = 5;
+
+    // Actual log message
+    string message = 6;
+
+    // Response/request processing time in milliseconds
+    int64 response_time_ms = 7;
+
+    // Distributed tracing identifier
+    string trace_id = 8;
+}
+
+// Supported log levels
+enum LogLevel {
+    LOG_LEVEL_UNSPECIFIED = 0;
+    DEBUG = 1;
+    INFO = 2;
+    WARN = 3;
+    ERROR = 4;
+}
+
+// Batch of logs
+message LogBatch {
+
+    repeated LogMessage logs = 1;
+}
+
+// Response returned after ingestion
+message LogResponse {
+
+    bool success = 1;
+
+    string message = 2;
+
+    // Number of logs successfully accepted
+    int32 accepted_count = 3;
+
+    // Number of logs rejected during validation
+    int32 rejected_count = 4;
+}
