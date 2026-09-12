@@ -163,7 +163,7 @@
         <version>${protobuf.version}</version>
     </protoc>
 
-    <embedSources>false</embedSources>
+    
 
 </configuration>
 

@@ -11,9 +11,14 @@ import java.util.List;
 public class LogIngestionService {
 
     private final LogValidator logValidator;
+    private final LogIndexerService logIndexerService;
 
-    public LogIngestionService(LogValidator logValidator) {
+    public LogIngestionService(
+            LogValidator logValidator,
+            LogIndexerService logIndexerService) {
+
         this.logValidator = logValidator;
+        this.logIndexerService = logIndexerService;
     }
 
     /**
@@ -28,9 +33,7 @@ public class LogIngestionService {
             return false;
         }
 
-        // TODO:
-        // Forward the valid log to the search/indexing pipeline.
-        // This will be connected to the search-engine module later.
+        logIndexerService.index(log);
 
         return true;
     }
@@ -68,6 +71,8 @@ public class LogIngestionService {
                 rejectedLogs.add(log);
             }
         }
+
+        logIndexerService.indexBatch(acceptedLogs);
 
         return new IngestionResult(
                 acceptedCount,

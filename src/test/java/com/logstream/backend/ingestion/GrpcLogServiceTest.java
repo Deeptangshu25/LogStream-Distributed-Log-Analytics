@@ -1,7 +1,8 @@
 package com.logstream.backend.ingestion;
 
-import com.logstream.backend.model.LogEntry;
+import com.logstream.backend.service.LogIndexerService;
 import com.logstream.backend.service.LogIngestionService;
+import com.logstream.backend.service.LoggingLogIndexerService;
 import com.logstream.proto.LogLevel;
 import com.logstream.proto.LogMessage;
 import com.logstream.proto.LogResponse;
@@ -14,9 +15,17 @@ class GrpcLogServiceTest {
 
     @Test
     void shouldAcceptValidLog() {
+
         LogValidator validator = new LogValidator();
+
+        LogIndexerService indexerService =
+                new LoggingLogIndexerService();
+
         LogIngestionService ingestionService =
-                new LogIngestionService(validator);
+                new LogIngestionService(
+                        validator,
+                        indexerService
+                );
 
         GrpcLogService grpcService =
                 new GrpcLogService(ingestionService);
@@ -32,7 +41,8 @@ class GrpcLogServiceTest {
                 .setTraceId("trace-001")
                 .build();
 
-        TestStreamObserver observer = new TestStreamObserver();
+        TestStreamObserver observer =
+                new TestStreamObserver();
 
         grpcService.sendLog(request, observer);
 
