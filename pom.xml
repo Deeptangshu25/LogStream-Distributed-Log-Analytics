@@ -58,13 +58,19 @@
     <dependencies>
 
         <!-- ========================================= -->
-        <!-- Spring Boot                             -->
+        <!-- Spring Boot                              -->
         <!-- ========================================= -->
 
         <!-- Spring MVC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+        <!-- Jackson JSON -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- WebSocket -->
@@ -153,30 +159,25 @@
 
                 <configuration>
 
-    <sourceDirectories>
-        <sourceDirectory>
-            ${project.basedir}/proto
-        </sourceDirectory>
-    </sourceDirectories>
+                    <sourceDirectories>
+                        <sourceDirectory>
+                            ${project.basedir}/proto
+                        </sourceDirectory>
+                    </sourceDirectories>
 
-    <protoc kind="binary-maven">
-        <version>${protobuf.version}</version>
-    </protoc>
+                    <protoc kind="binary-maven">
+                        <version>${protobuf.version}</version>
+                    </protoc>
 
-    
-
-</configuration>
+                </configuration>
 
                 <executions>
-
                     <execution>
                         <id>generate-protobuf</id>
-
                         <goals>
                             <goal>generate</goal>
                         </goals>
                     </execution>
-
                 </executions>
 
             </plugin>
