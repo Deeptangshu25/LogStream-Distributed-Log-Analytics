@@ -2,6 +2,7 @@ package com.logstream.backend.service;
 
 import com.logstream.backend.ingestion.LogValidator;
 import com.logstream.backend.model.LogEntry;
+import com.logstream.backend.websocket.LiveLogBroadcaster;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -19,7 +20,11 @@ class LogIngestionServiceTest {
         TestLogIndexerService indexer = new TestLogIndexerService();
 
         LogIngestionService service =
-                new LogIngestionService(validator, indexer);
+                new LogIngestionService(
+                        validator,
+                        indexer,
+                        createBroadcaster()
+                );
 
         LogEntry log = createValidLog("log-001");
 
@@ -27,7 +32,10 @@ class LogIngestionServiceTest {
 
         assertTrue(result);
         assertEquals(1, indexer.indexedLogs.size());
-        assertEquals("log-001", indexer.indexedLogs.get(0).getId());
+        assertEquals(
+                "log-001",
+                indexer.indexedLogs.get(0).getId()
+        );
     }
 
     @Test
@@ -37,7 +45,11 @@ class LogIngestionServiceTest {
         TestLogIndexerService indexer = new TestLogIndexerService();
 
         LogIngestionService service =
-                new LogIngestionService(validator, indexer);
+                new LogIngestionService(
+                        validator,
+                        indexer,
+                        createBroadcaster()
+                );
 
         LogEntry invalidLog = createValidLog("");
 
@@ -54,7 +66,11 @@ class LogIngestionServiceTest {
         TestLogIndexerService indexer = new TestLogIndexerService();
 
         LogIngestionService service =
-                new LogIngestionService(validator, indexer);
+                new LogIngestionService(
+                        validator,
+                        indexer,
+                        createBroadcaster()
+                );
 
         LogEntry validLog1 = createValidLog("log-001");
         LogEntry invalidLog = createValidLog("");
@@ -92,7 +108,11 @@ class LogIngestionServiceTest {
         TestLogIndexerService indexer = new TestLogIndexerService();
 
         LogIngestionService service =
-                new LogIngestionService(validator, indexer);
+                new LogIngestionService(
+                        validator,
+                        indexer,
+                        createBroadcaster()
+                );
 
         LogIngestionService.IngestionResult result =
                 service.ingestBatch(null);
@@ -100,6 +120,10 @@ class LogIngestionServiceTest {
         assertEquals(0, result.getAcceptedCount());
         assertEquals(0, result.getRejectedCount());
         assertTrue(indexer.indexedLogs.isEmpty());
+    }
+
+    private LiveLogBroadcaster createBroadcaster() {
+        return new LiveLogBroadcaster();
     }
 
     private LogEntry createValidLog(String id) {
@@ -134,7 +158,6 @@ class LogIngestionServiceTest {
 
         @Override
         public void indexBatch(Iterable<LogEntry> logs) {
-
             for (LogEntry log : logs) {
                 indexedLogs.add(log);
             }

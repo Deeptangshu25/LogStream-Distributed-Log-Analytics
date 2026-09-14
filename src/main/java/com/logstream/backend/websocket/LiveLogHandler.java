@@ -1,33 +1,21 @@
 package com.logstream.backend.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.logstream.backend.model.LogEntry;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 @Component
 public class LiveLogHandler extends TextWebSocketHandler {
 
-    private final ObjectMapper objectMapper;
+    private final LiveLogBroadcaster broadcaster;
 
-    public LiveLogHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public LiveLogHandler(LiveLogBroadcaster broadcaster) {
+        this.broadcaster = broadcaster;
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        System.out.println("WebSocket client connected: " + session.getId());
-    }
-
-    public void sendLog(WebSocketSession session, LogEntry log) {
-        try {
-            String json = objectMapper.writeValueAsString(log);
-            session.sendMessage(new TextMessage(json));
-        } catch (Exception e) {
-            System.err.println("Failed to send log: " + e.getMessage());
-        }
+        broadcaster.addSession(session);
     }
 
     @Override
@@ -35,6 +23,6 @@ public class LiveLogHandler extends TextWebSocketHandler {
             WebSocketSession session,
             org.springframework.web.socket.CloseStatus status) {
 
-        System.out.println("WebSocket client disconnected: " + session.getId());
+        broadcaster.removeSession(session);
     }
 }
