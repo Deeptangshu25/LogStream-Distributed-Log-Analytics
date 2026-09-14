@@ -6,6 +6,8 @@ import com.logstream.backend.service.LogIndexerService;
 import com.logstream.backend.service.LogIngestionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+// import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logstream.backend.websocket.LiveLogBroadcaster;
 
 import java.time.Instant;
 import java.util.List;
@@ -94,11 +96,12 @@ class LogControllerTest {
         LogIndexerService indexer =
                 new TestLogIndexerService();
 
-        LogIngestionService ingestionService =
-                new LogIngestionService(
-                        validator,
-                        indexer
-                );
+LogIngestionService ingestionService =
+        new LogIngestionService(
+                validator,
+                indexer,
+                new LiveLogBroadcaster()
+        );
 
         return new LogController(ingestionService);
     }

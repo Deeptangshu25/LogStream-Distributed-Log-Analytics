@@ -3,6 +3,7 @@ package com.logstream.backend.ingestion;
 import com.logstream.backend.service.LogIndexerService;
 import com.logstream.backend.service.LogIngestionService;
 import com.logstream.backend.service.LoggingLogIndexerService;
+import com.logstream.backend.websocket.LiveLogBroadcaster;
 import com.logstream.proto.LogLevel;
 import com.logstream.proto.LogMessage;
 import com.logstream.proto.LogResponse;
@@ -24,7 +25,8 @@ class GrpcLogServiceTest {
         LogIngestionService ingestionService =
                 new LogIngestionService(
                         validator,
-                        indexerService
+                        indexerService,
+                        new LiveLogBroadcaster()
                 );
 
         GrpcLogService grpcService =
@@ -48,8 +50,14 @@ class GrpcLogServiceTest {
 
         assertNotNull(observer.response);
         assertTrue(observer.response.getSuccess());
-        assertEquals(1, observer.response.getAcceptedCount());
-        assertEquals(0, observer.response.getRejectedCount());
+        assertEquals(
+                1,
+                observer.response.getAcceptedCount()
+        );
+        assertEquals(
+                0,
+                observer.response.getRejectedCount()
+        );
         assertTrue(observer.completed);
     }
 
@@ -66,7 +74,10 @@ class GrpcLogServiceTest {
 
         @Override
         public void onError(Throwable throwable) {
-            fail("gRPC call failed: " + throwable.getMessage());
+            fail(
+                    "gRPC call failed: "
+                            + throwable.getMessage()
+            );
         }
 
         @Override

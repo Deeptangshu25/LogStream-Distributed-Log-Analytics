@@ -2,6 +2,7 @@ package com.logstream.backend.service;
 
 import com.logstream.backend.ingestion.LogValidator;
 import com.logstream.backend.model.LogEntry;
+import com.logstream.backend.websocket.LiveLogBroadcaster;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -12,13 +13,16 @@ public class LogIngestionService {
 
     private final LogValidator logValidator;
     private final LogIndexerService logIndexerService;
+    private final LiveLogBroadcaster liveLogBroadcaster;
 
     public LogIngestionService(
             LogValidator logValidator,
-            LogIndexerService logIndexerService) {
+            LogIndexerService logIndexerService,
+            LiveLogBroadcaster liveLogBroadcaster) {
 
         this.logValidator = logValidator;
         this.logIndexerService = logIndexerService;
+        this.liveLogBroadcaster = liveLogBroadcaster;
     }
 
     /**
@@ -34,6 +38,7 @@ public class LogIngestionService {
         }
 
         logIndexerService.index(log);
+        liveLogBroadcaster.broadcast(log);
 
         return true;
     }
@@ -73,6 +78,11 @@ public class LogIngestionService {
         }
 
         logIndexerService.indexBatch(acceptedLogs);
+
+        // Broadcast only validated logs.
+        for (LogEntry log : acceptedLogs) {
+            liveLogBroadcaster.broadcast(log);
+        }
 
         return new IngestionResult(
                 acceptedCount,
