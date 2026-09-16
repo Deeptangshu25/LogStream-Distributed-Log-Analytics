@@ -58,7 +58,7 @@
     <dependencies>
 
         <!-- ========================================= -->
-        <!-- Spring Boot                              -->
+        <!-- Spring Boot                             -->
         <!-- ========================================= -->
 
         <!-- Spring MVC -->
@@ -72,10 +72,13 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+
+        <!-- Jackson Java Time -->
         <dependency>
-    <groupId>com.fasterxml.jackson.datatype</groupId>
-    <artifactId>jackson-datatype-jsr310</artifactId>
-</dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
         <!-- WebSocket -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -175,18 +178,22 @@
                 </configuration>
 
                 <executions>
+
                     <execution>
                         <id>generate-protobuf</id>
+
                         <goals>
                             <goal>generate</goal>
                         </goals>
+
                     </execution>
+
                 </executions>
 
             </plugin>
 
             <!-- ========================================= -->
-            <!-- Spring Boot                               -->
+            <!-- Spring Boot                              -->
             <!-- ========================================= -->
 
             <plugin>
