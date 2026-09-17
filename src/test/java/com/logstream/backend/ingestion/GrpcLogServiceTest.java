@@ -2,6 +2,7 @@ package com.logstream.backend.ingestion;
 
 import com.logstream.backend.service.LogIndexerService;
 import com.logstream.backend.service.LogIngestionService;
+import com.logstream.backend.service.LogStore;
 import com.logstream.backend.service.LoggingLogIndexerService;
 import com.logstream.backend.websocket.LiveLogBroadcaster;
 import com.logstream.proto.LogLevel;
@@ -17,7 +18,8 @@ class GrpcLogServiceTest {
     @Test
     void shouldAcceptValidLog() {
 
-        LogValidator validator = new LogValidator();
+        LogValidator validator =
+                new LogValidator();
 
         LogIndexerService indexerService =
                 new LoggingLogIndexerService();
@@ -26,22 +28,28 @@ class GrpcLogServiceTest {
                 new LogIngestionService(
                         validator,
                         indexerService,
-                        new LiveLogBroadcaster()
+                        new LiveLogBroadcaster(),
+                        new LogStore()
                 );
 
         GrpcLogService grpcService =
                 new GrpcLogService(ingestionService);
 
-        LogMessage request = LogMessage.newBuilder()
-                .setId("log-001")
-                .setTimestamp("2026-09-11T17:30:00Z")
-                .setLevel(LogLevel.INFO)
-                .setService("payment-service")
-                .setHost("server-01")
-                .setMessage("Payment processed successfully")
-                .setResponseTimeMs(120)
-                .setTraceId("trace-001")
-                .build();
+        LogMessage request =
+                LogMessage.newBuilder()
+                        .setId("log-001")
+                        .setTimestamp(
+                                "2026-09-11T17:30:00Z"
+                        )
+                        .setLevel(LogLevel.INFO)
+                        .setService("payment-service")
+                        .setHost("server-01")
+                        .setMessage(
+                                "Payment processed successfully"
+                        )
+                        .setResponseTimeMs(120)
+                        .setTraceId("trace-001")
+                        .build();
 
         TestStreamObserver observer =
                 new TestStreamObserver();
@@ -49,15 +57,21 @@ class GrpcLogServiceTest {
         grpcService.sendLog(request, observer);
 
         assertNotNull(observer.response);
-        assertTrue(observer.response.getSuccess());
+
+        assertTrue(
+                observer.response.getSuccess()
+        );
+
         assertEquals(
                 1,
                 observer.response.getAcceptedCount()
         );
+
         assertEquals(
                 0,
                 observer.response.getRejectedCount()
         );
+
         assertTrue(observer.completed);
     }
 

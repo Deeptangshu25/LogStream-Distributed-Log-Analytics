@@ -6,7 +6,7 @@ import com.logstream.backend.websocket.LiveLogBroadcaster;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,14 +16,15 @@ class LogIngestionServiceTest {
     @Test
     void shouldIndexValidLog() {
 
-        LogValidator validator = new LogValidator();
-        TestLogIndexerService indexer = new TestLogIndexerService();
+        TestLogIndexerService indexer =
+                new TestLogIndexerService();
 
         LogIngestionService service =
                 new LogIngestionService(
-                        validator,
+                        new LogValidator(),
                         indexer,
-                        createBroadcaster()
+                        new LiveLogBroadcaster(),
+                        new LogStore()
                 );
 
         LogEntry log = createValidLog("log-001");
@@ -41,19 +42,22 @@ class LogIngestionServiceTest {
     @Test
     void shouldNotIndexInvalidLog() {
 
-        LogValidator validator = new LogValidator();
-        TestLogIndexerService indexer = new TestLogIndexerService();
+        TestLogIndexerService indexer =
+                new TestLogIndexerService();
 
         LogIngestionService service =
                 new LogIngestionService(
-                        validator,
+                        new LogValidator(),
                         indexer,
-                        createBroadcaster()
+                        new LiveLogBroadcaster(),
+                        new LogStore()
                 );
 
-        LogEntry invalidLog = createValidLog("");
+        LogEntry invalidLog =
+                createValidLog("");
 
-        boolean result = service.ingest(invalidLog);
+        boolean result =
+                service.ingest(invalidLog);
 
         assertFalse(result);
         assertTrue(indexer.indexedLogs.isEmpty());
@@ -62,33 +66,41 @@ class LogIngestionServiceTest {
     @Test
     void shouldIndexOnlyValidLogsInBatch() {
 
-        LogValidator validator = new LogValidator();
-        TestLogIndexerService indexer = new TestLogIndexerService();
+        TestLogIndexerService indexer =
+                new TestLogIndexerService();
 
         LogIngestionService service =
                 new LogIngestionService(
-                        validator,
+                        new LogValidator(),
                         indexer,
-                        createBroadcaster()
+                        new LiveLogBroadcaster(),
+                        new LogStore()
                 );
 
-        LogEntry validLog1 = createValidLog("log-001");
-        LogEntry invalidLog = createValidLog("");
-        LogEntry validLog2 = createValidLog("log-002");
+        List<LogEntry> logs =
+                new ArrayList<>();
 
-        List<LogEntry> logs = Arrays.asList(
-                validLog1,
-                invalidLog,
-                validLog2
-        );
+        logs.add(createValidLog("log-001"));
+        logs.add(createValidLog(""));
+        logs.add(createValidLog("log-003"));
 
         LogIngestionService.IngestionResult result =
                 service.ingestBatch(logs);
 
-        assertEquals(2, result.getAcceptedCount());
-        assertEquals(1, result.getRejectedCount());
+        assertEquals(
+                2,
+                result.getAcceptedCount()
+        );
 
-        assertEquals(2, indexer.indexedLogs.size());
+        assertEquals(
+                1,
+                result.getRejectedCount()
+        );
+
+        assertEquals(
+                2,
+                indexer.indexedLogs.size()
+        );
 
         assertEquals(
                 "log-001",
@@ -96,7 +108,7 @@ class LogIngestionServiceTest {
         );
 
         assertEquals(
-                "log-002",
+                "log-003",
                 indexer.indexedLogs.get(1).getId()
         );
     }
@@ -104,52 +116,64 @@ class LogIngestionServiceTest {
     @Test
     void shouldHandleNullBatch() {
 
-        LogValidator validator = new LogValidator();
-        TestLogIndexerService indexer = new TestLogIndexerService();
+        TestLogIndexerService indexer =
+                new TestLogIndexerService();
 
         LogIngestionService service =
                 new LogIngestionService(
-                        validator,
+                        new LogValidator(),
                         indexer,
-                        createBroadcaster()
+                        new LiveLogBroadcaster(),
+                        new LogStore()
                 );
 
         LogIngestionService.IngestionResult result =
                 service.ingestBatch(null);
 
-        assertEquals(0, result.getAcceptedCount());
-        assertEquals(0, result.getRejectedCount());
-        assertTrue(indexer.indexedLogs.isEmpty());
-    }
+        assertEquals(
+                0,
+                result.getAcceptedCount()
+        );
 
-    private LiveLogBroadcaster createBroadcaster() {
-        return new LiveLogBroadcaster();
+        assertEquals(
+                0,
+                result.getRejectedCount()
+        );
+
+        assertTrue(
+                result.getAcceptedLogs().isEmpty()
+        );
+
+        assertTrue(
+                result.getRejectedLogs().isEmpty()
+        );
+
+        assertTrue(
+                indexer.indexedLogs.isEmpty()
+        );
     }
 
     private LogEntry createValidLog(String id) {
 
         return new LogEntry(
                 id,
-                Instant.parse("2026-09-11T17:30:00Z"),
+                Instant.parse(
+                        "2026-09-17T12:00:00Z"
+                ),
                 LogEntry.LogLevel.INFO,
-                "payment-service",
+                "test-service",
                 "server-01",
-                "Payment processed successfully",
-                120,
+                "Test log message",
+                100,
                 "trace-001"
         );
     }
 
-    /**
-     * Test implementation of the indexing interface.
-     *
-     * It records logs instead of writing to Lucene.
-     */
-    private static class TestLogIndexerService
+    static class TestLogIndexerService
             implements LogIndexerService {
 
         private final List<LogEntry> indexedLogs =
-                new java.util.ArrayList<>();
+                new ArrayList<>();
 
         @Override
         public void index(LogEntry log) {
@@ -157,7 +181,9 @@ class LogIngestionServiceTest {
         }
 
         @Override
-        public void indexBatch(Iterable<LogEntry> logs) {
+        public void indexBatch(
+                Iterable<LogEntry> logs) {
+
             for (LogEntry log : logs) {
                 indexedLogs.add(log);
             }

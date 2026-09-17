@@ -4,10 +4,10 @@ import com.logstream.backend.ingestion.LogValidator;
 import com.logstream.backend.model.LogEntry;
 import com.logstream.backend.service.LogIndexerService;
 import com.logstream.backend.service.LogIngestionService;
+import com.logstream.backend.service.LogStore;
+import com.logstream.backend.websocket.LiveLogBroadcaster;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
-// import com.fasterxml.jackson.databind.ObjectMapper;
-import com.logstream.backend.websocket.LiveLogBroadcaster;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,7 +26,11 @@ class LogControllerTest {
         ResponseEntity<String> response =
                 controller.ingestLog(log);
 
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(
+                200,
+                response.getStatusCode().value()
+        );
+
         assertEquals(
                 "Log accepted successfully",
                 response.getBody()
@@ -44,7 +48,11 @@ class LogControllerTest {
         ResponseEntity<String> response =
                 controller.ingestLog(invalidLog);
 
-        assertEquals(400, response.getStatusCode().value());
+        assertEquals(
+                400,
+                response.getStatusCode().value()
+        );
+
         assertEquals(
                 "Log rejected during validation",
                 response.getBody()
@@ -74,7 +82,11 @@ class LogControllerTest {
         ResponseEntity<LogIngestionService.IngestionResult> response =
                 controller.ingestLogs(logs);
 
-        assertEquals(200, response.getStatusCode().value());
+        assertEquals(
+                200,
+                response.getStatusCode().value()
+        );
+
         assertNotNull(response.getBody());
 
         assertEquals(
@@ -96,12 +108,13 @@ class LogControllerTest {
         LogIndexerService indexer =
                 new TestLogIndexerService();
 
-LogIngestionService ingestionService =
-        new LogIngestionService(
-                validator,
-                indexer,
-                new LiveLogBroadcaster()
-        );
+        LogIngestionService ingestionService =
+                new LogIngestionService(
+                        validator,
+                        indexer,
+                        new LiveLogBroadcaster(),
+                        new LogStore()
+                );
 
         return new LogController(ingestionService);
     }
