@@ -14,15 +14,18 @@ public class LogIngestionService {
     private final LogValidator logValidator;
     private final LogIndexerService logIndexerService;
     private final LiveLogBroadcaster liveLogBroadcaster;
+    private final LogStore logStore;
 
     public LogIngestionService(
             LogValidator logValidator,
             LogIndexerService logIndexerService,
-            LiveLogBroadcaster liveLogBroadcaster) {
+            LiveLogBroadcaster liveLogBroadcaster,
+            LogStore logStore) {
 
         this.logValidator = logValidator;
         this.logIndexerService = logIndexerService;
         this.liveLogBroadcaster = liveLogBroadcaster;
+        this.logStore = logStore;
     }
 
     /**
@@ -38,6 +41,7 @@ public class LogIngestionService {
         }
 
         logIndexerService.index(log);
+        logStore.add(log);
         liveLogBroadcaster.broadcast(log);
 
         return true;
@@ -78,6 +82,7 @@ public class LogIngestionService {
         }
 
         logIndexerService.indexBatch(acceptedLogs);
+        logStore.addAll(acceptedLogs);
 
         // Broadcast only validated logs.
         for (LogEntry log : acceptedLogs) {
