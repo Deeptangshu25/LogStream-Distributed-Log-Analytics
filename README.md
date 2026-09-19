@@ -4,6 +4,7 @@ A distributed log analytics and alerting platform designed to ingest, validate, 
 
 ## Project Overview
 
+
 Modern distributed applications generate large volumes of logs across multiple services and hosts. LogStream provides a centralized platform for collecting logs through REST and gRPC, validating and processing them, indexing them for search, analyzing them, and streaming live logs through WebSockets.
 
 ## Key Features
@@ -109,6 +110,8 @@ Valid Log
                             ▼
                        Live Dashboard
 ```
+
+LogStream is designed to ingest, index, search, analyze, and monitor large volumes of application logs.
 
 ## Technology Stack
 
