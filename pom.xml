@@ -49,6 +49,9 @@
         <!-- Protocol Buffers -->
         <protobuf.version>4.30.2</protobuf.version>
 
+        <!-- Apache Lucene -->
+        <lucene.version>9.11.1</lucene.version>
+
     </properties>
 
     <!-- ========================================= -->
@@ -135,6 +138,28 @@
         </dependency>
 
         <!-- ========================================= -->
+        <!-- Apache Lucene                             -->
+        <!-- ========================================= -->
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-common</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <!-- ========================================= -->
         <!-- Testing                                  -->
         <!-- ========================================= -->
 
@@ -153,6 +178,27 @@
     <build>
 
         <plugins>
+
+            <!-- Include the existing top-level search-engine source tree. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>add-search-engine-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/search-engine</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
             <!-- ========================================= -->
             <!-- Protobuf + gRPC Code Generation          -->
