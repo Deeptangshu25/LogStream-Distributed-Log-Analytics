@@ -65,6 +65,14 @@ class LogSearchEngineTest {
     }
 
     @Test
+    void filtersByService() {
+        SearchRequest request = request();
+        request.setService("order-service");
+
+        assertEquals(1, searchEngine.search(request).getTotalHits());
+    }
+
+    @Test
     void appliesCombinedFilters() {
         SearchRequest request = request();
         request.setQuery("database");
