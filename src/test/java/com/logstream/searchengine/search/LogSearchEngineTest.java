@@ -73,6 +73,14 @@ class LogSearchEngineTest {
     }
 
     @Test
+    void filtersByLevel() {
+        SearchRequest request = request();
+        request.setLevel("ERROR");
+
+        assertEquals(3, searchEngine.search(request).getTotalHits());
+    }
+
+    @Test
     void appliesCombinedFilters() {
         SearchRequest request = request();
         request.setQuery("database");
