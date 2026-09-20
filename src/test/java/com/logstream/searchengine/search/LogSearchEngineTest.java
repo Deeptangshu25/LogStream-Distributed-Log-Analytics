@@ -109,6 +109,15 @@ class LogSearchEngineTest {
     }
 
     @Test
+    void returnsNoResultsForReversedTimestampRanges() {
+        SearchRequest request = request();
+        request.setStartTime("2026-09-21T00:00:00Z");
+        request.setEndTime("2026-09-19T00:00:00Z");
+
+        assertEquals(0, searchEngine.search(request).getTotalHits());
+    }
+
+    @Test
     void paginatesResultsAndPreservesTotalHits() {
         SearchRequest request = request();
         request.setQuery("database");
