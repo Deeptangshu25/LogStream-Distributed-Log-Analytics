@@ -47,6 +47,11 @@ class LogSearchEngineTest {
     }
 
     @Test
+    void emptyQueryReturnsAllIndexedLogs() {
+        assertEquals(4, searchEngine.search(request()).getTotalHits());
+    }
+
+    @Test
     void filtersByServiceLevelAndHost() {
         SearchRequest request = request();
         request.setService("payment-service");
