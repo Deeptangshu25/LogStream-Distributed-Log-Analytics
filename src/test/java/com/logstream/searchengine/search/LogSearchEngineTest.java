@@ -81,6 +81,14 @@ class LogSearchEngineTest {
     }
 
     @Test
+    void filtersByHost() {
+        SearchRequest request = request();
+        request.setHost("server-02");
+
+        assertEquals(1, searchEngine.search(request).getTotalHits());
+    }
+
+    @Test
     void appliesCombinedFilters() {
         SearchRequest request = request();
         request.setQuery("database");
