@@ -133,6 +133,18 @@ class LogSearchEngineTest {
     }
 
     @Test
+    void normalizesInvalidPagination() {
+        SearchRequest request = request();
+        request.setPage(-1);
+        request.setSize(500);
+
+        SearchResult result = searchEngine.search(request);
+
+        assertEquals(0, result.getPage());
+        assertEquals(100, result.getSize());
+    }
+
+    @Test
     void returnsEmptyResultsWhenNothingMatches() {
         SearchRequest request = request();
         request.setQuery("does-not-exist");
