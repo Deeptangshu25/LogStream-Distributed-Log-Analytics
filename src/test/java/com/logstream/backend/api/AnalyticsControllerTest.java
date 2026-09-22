@@ -3,7 +3,11 @@ package com.logstream.backend.api;
 import com.logstream.backend.model.AnalyticsResult;
 import com.logstream.backend.model.LogEntry;
 import com.logstream.backend.service.AnalyticsService;
-import com.logstream.backend.service.LogStore;
+import com.logstream.backend.service.AnalyticsServiceImpl;
+import com.logstream.searchengine.indexing.IndexManager;
+import com.logstream.searchengine.indexing.LuceneConfig;
+import com.logstream.searchengine.search.LogSearchEngine;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
@@ -14,38 +18,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnalyticsControllerTest {
 
     @Test
-    void shouldReturnAnalyticsForStoredLogs() {
+    void shouldReturnAnalyticsForStoredLogs() throws Exception {
 
-        LogStore logStore = new LogStore();
+        IndexManager indexManager =
+                new IndexManager(
+                        new ByteBuffersDirectory(),
+                        new LuceneConfig().createAnalyzer()
+                );
 
-        logStore.add(createLog(
-                "log-001",
-                LogEntry.LogLevel.INFO,
-                "payment-service",
-                100
-        ));
+        LogSearchEngine searchEngine =
+                new LogSearchEngine(indexManager);
 
-        logStore.add(createLog(
-                "log-002",
-                LogEntry.LogLevel.ERROR,
-                "payment-service",
-                200
-        ));
-
-        logStore.add(createLog(
-                "log-003",
-                LogEntry.LogLevel.WARN,
-                "user-service",
-                300
-        ));
+        indexEngineLogs(searchEngine, indexManager);
 
         AnalyticsService analyticsService =
-                new com.logstream.backend.service.AnalyticsServiceImpl();
+                new AnalyticsServiceImpl();
 
         AnalyticsController controller =
                 new AnalyticsController(
                         analyticsService,
-                        logStore
+                        searchEngine
                 );
 
         ResponseEntity<AnalyticsResult> response =
@@ -87,20 +79,30 @@ class AnalyticsControllerTest {
                 result.getLogsByService()
                         .get("user-service")
         );
+
+        searchEngine.close();
     }
 
     @Test
-    void shouldReturnEmptyAnalyticsWhenStoreIsEmpty() {
+    void shouldReturnEmptyAnalyticsWhenStoreIsEmpty()
+            throws Exception {
 
-        LogStore logStore = new LogStore();
+        IndexManager indexManager =
+                new IndexManager(
+                        new ByteBuffersDirectory(),
+                        new LuceneConfig().createAnalyzer()
+                );
+
+        LogSearchEngine searchEngine =
+                new LogSearchEngine(indexManager);
 
         AnalyticsService analyticsService =
-                new com.logstream.backend.service.AnalyticsServiceImpl();
+                new AnalyticsServiceImpl();
 
         AnalyticsController controller =
                 new AnalyticsController(
                         analyticsService,
-                        logStore
+                        searchEngine
                 );
 
         ResponseEntity<AnalyticsResult> response =
@@ -134,6 +136,44 @@ class AnalyticsControllerTest {
         assertTrue(
                 result.getLogsByService().isEmpty()
         );
+
+        searchEngine.close();
+    }
+
+    private void indexEngineLogs(
+            LogSearchEngine searchEngine,
+            IndexManager indexManager)
+            throws Exception {
+
+        LogEntry log1 = createLog(
+                "log-001",
+                LogEntry.LogLevel.INFO,
+                "payment-service",
+                100
+        );
+
+        LogEntry log2 = createLog(
+                "log-002",
+                LogEntry.LogLevel.ERROR,
+                "payment-service",
+                200
+        );
+
+        LogEntry log3 = createLog(
+                "log-003",
+                LogEntry.LogLevel.WARN,
+                "user-service",
+                300
+        );
+
+        com.logstream.searchengine.indexing.LogIndexer indexer =
+                new com.logstream.searchengine.indexing.LogIndexer(
+                        indexManager
+                );
+
+        indexer.index(log1);
+        indexer.index(log2);
+        indexer.index(log3);
     }
 
     private LogEntry createLog(
