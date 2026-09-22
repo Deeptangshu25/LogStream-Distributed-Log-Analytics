@@ -1,52 +1,69 @@
 package com.logstream.backend.ingestion;
 
-import com.logstream.backend.service.LogIndexerService;
+import com.logstream.backend.model.SearchRequest;
+import com.logstream.backend.model.SearchResult;
 import com.logstream.backend.service.LogIngestionService;
 import com.logstream.backend.service.LogStore;
-import com.logstream.backend.service.LoggingLogIndexerService;
 import com.logstream.backend.websocket.LiveLogBroadcaster;
+import com.logstream.searchengine.indexing.IndexManager;
+import com.logstream.searchengine.indexing.LogIndexer;
+import com.logstream.searchengine.search.LogSearchEngine;
 import com.logstream.proto.LogLevel;
 import com.logstream.proto.LogMessage;
 import com.logstream.proto.LogResponse;
 import io.grpc.stub.StreamObserver;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class GrpcLogServiceTest {
 
-    @Test
-    void shouldAcceptValidLog() {
+    private IndexManager indexManager;
+    private LogSearchEngine searchEngine;
+    private GrpcLogService grpcService;
 
-        LogValidator validator =
-                new LogValidator();
+    @BeforeEach
+    void setUp() throws Exception {
+        indexManager = new IndexManager(
+                new ByteBuffersDirectory(),
+                new StandardAnalyzer());
 
-        LogIndexerService indexerService =
-                new LoggingLogIndexerService();
+        LogIndexer logIndexer = new LogIndexer(indexManager);
+        searchEngine = new LogSearchEngine(indexManager);
 
         LogIngestionService ingestionService =
                 new LogIngestionService(
-                        validator,
-                        indexerService,
+                        new LogValidator(),
+                        logIndexer,
                         new LiveLogBroadcaster(),
-                        new LogStore()
-                );
+                        new LogStore());
 
-        GrpcLogService grpcService =
-                new GrpcLogService(ingestionService);
+        grpcService = new GrpcLogService(ingestionService);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        searchEngine.close();
+    }
+
+    @Test
+    void shouldAcceptValidLogAndMakeItSearchable() {
 
         LogMessage request =
                 LogMessage.newBuilder()
                         .setId("log-001")
-                        .setTimestamp(
-                                "2026-09-11T17:30:00Z"
-                        )
+                        .setTimestamp("2026-09-11T17:30:00Z")
                         .setLevel(LogLevel.INFO)
                         .setService("payment-service")
                         .setHost("server-01")
-                        .setMessage(
-                                "Payment processed successfully"
-                        )
+                        .setMessage("Payment processed successfully")
                         .setResponseTimeMs(120)
                         .setTraceId("trace-001")
                         .build();
@@ -58,21 +75,28 @@ class GrpcLogServiceTest {
 
         assertNotNull(observer.response);
 
-        assertTrue(
-                observer.response.getSuccess()
-        );
+        assertTrue(observer.response.getSuccess());
 
         assertEquals(
                 1,
-                observer.response.getAcceptedCount()
-        );
+                observer.response.getAcceptedCount());
 
         assertEquals(
                 0,
-                observer.response.getRejectedCount()
-        );
+                observer.response.getRejectedCount());
 
         assertTrue(observer.completed);
+
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.setQuery("Payment processed");
+
+        SearchResult searchResult =
+                searchEngine.search(searchRequest);
+
+        assertEquals(1, searchResult.getTotalHits());
+        assertEquals(
+                "log-001",
+                searchResult.getLogs().get(0).getId());
     }
 
     private static class TestStreamObserver
@@ -90,8 +114,7 @@ class GrpcLogServiceTest {
         public void onError(Throwable throwable) {
             fail(
                     "gRPC call failed: "
-                            + throwable.getMessage()
-            );
+                            + throwable.getMessage());
         }
 
         @Override
