@@ -16,6 +16,7 @@ import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -70,9 +71,11 @@ public final class LogSearchEngine implements SearchService, AutoCloseable {
 
                 long totalHits = searcher.count(query);
 
-                long offset = (long) filter.page() * filter.size();
+                long offset =
+                        (long) filter.page() * filter.size();
 
                 if (offset >= totalHits) {
+
                     return new SearchResult(
                             List.of(),
                             totalHits,
@@ -81,25 +84,33 @@ public final class LogSearchEngine implements SearchService, AutoCloseable {
                 }
 
                 int topN = Math.toIntExact(
-                        Math.min(totalHits, offset + filter.size()));
+                        Math.min(
+                                totalHits,
+                                offset + filter.size()));
 
-                var topDocs = searcher.search(query, topN);
+                var topDocs =
+                        searcher.search(query, topN);
 
-                int from = Math.toIntExact(offset);
+                int from =
+                        Math.toIntExact(offset);
 
-                int to = Math.min(
-                        topDocs.scoreDocs.length,
-                        from + filter.size());
+                int to =
+                        Math.min(
+                                topDocs.scoreDocs.length,
+                                from + filter.size());
 
                 List<LogEntry> logs =
-                        new ArrayList<>(Math.max(0, to - from));
+                        new ArrayList<>(
+                                Math.max(0, to - from));
 
                 for (int index = from; index < to; index++) {
 
                     logs.add(
                             toLogEntry(
                                     searcher.doc(
-                                            topDocs.scoreDocs[index].doc)));
+                                            topDocs
+                                                    .scoreDocs[index]
+                                                    .doc)));
                 }
 
                 return new SearchResult(
@@ -117,13 +128,62 @@ public final class LogSearchEngine implements SearchService, AutoCloseable {
         }
     }
 
+    /*
+     * Retrieve all logs currently stored in the
+     * shared Lucene index.
+     *
+     * Used by analytics so that analytics and
+     * search operate on the same source of data.
+     */
+    public List<LogEntry> getAllLogs() {
+
+        try {
+
+            return indexManager.withSearcher(searcher -> {
+
+                int totalDocs =
+                        searcher.getIndexReader().numDocs();
+
+                if (totalDocs == 0) {
+                    return List.of();
+                }
+
+                var topDocs =
+                        searcher.search(
+                                new MatchAllDocsQuery(),
+                                totalDocs);
+
+                List<LogEntry> logs =
+                        new ArrayList<>(
+                                topDocs.scoreDocs.length);
+
+                for (var scoreDoc : topDocs.scoreDocs) {
+
+                    logs.add(
+                            toLogEntry(
+                                    searcher.doc(
+                                            scoreDoc.doc)));
+                }
+
+                return logs;
+            });
+
+        } catch (IOException exception) {
+
+            throw new IllegalStateException(
+                    "Unable to retrieve indexed logs",
+                    exception);
+        }
+    }
+
     private Query buildQuery(SearchFilter filter) {
 
         BooleanQuery.Builder builder =
                 new BooleanQuery.Builder();
 
         builder.add(
-                queryParserService.parse(filter.query()),
+                queryParserService.parse(
+                        filter.query()),
                 BooleanClause.Occur.MUST);
 
         addExactFilter(
@@ -199,17 +259,20 @@ public final class LogSearchEngine implements SearchService, AutoCloseable {
                 BooleanClause.Occur.FILTER);
     }
 
-    private static LogEntry toLogEntry(Document document) {
+    private static LogEntry toLogEntry(
+            Document document) {
 
         String traceId =
-                document.get(LuceneConfig.FIELD_TRACE_ID);
+                document.get(
+                        LuceneConfig.FIELD_TRACE_ID);
 
         if (traceId != null && traceId.isEmpty()) {
             traceId = null;
         }
 
         return new LogEntry(
-                document.get(LuceneConfig.FIELD_ID),
+                document.get(
+                        LuceneConfig.FIELD_ID),
 
                 Instant.ofEpochMilli(
                         document
@@ -244,7 +307,6 @@ public final class LogSearchEngine implements SearchService, AutoCloseable {
     public void close() throws IOException {
 
         queryParserService.close();
-
         indexManager.close();
     }
 }
