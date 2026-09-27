@@ -122,7 +122,6 @@ async function fetchGitHubEvents() {
       }
     }
 
-    // Keep memory under control
     if (lastEventIds.size > 500) {
       const ids = Array.from(lastEventIds)
       lastEventIds = new Set(ids.slice(-300))
